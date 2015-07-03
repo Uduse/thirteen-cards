@@ -110,6 +110,47 @@ class StupidPlayer(Player):
 		else:
 			pass
 
+class OkayPlayer(Player):
+	def __init__(self, name=None):
+		super(OkayPlayer, self).__init__(name=name)
+		self.guess_made = set()
+		self.guess_got = set()
+		self.cards_info = dict((c, None) for c in all_cards)
+
+	def get_card(self, card):
+		super(OkayPlayer, self).get_card(card)
+		self.cards_info[card] = False
+
+	def snipe_one(self):
+		return set(list('234'))
+
+	def snipe_two(self):
+		pass
+
+	def make_guess(self, revealed):
+		for c in revealed:
+			self.cards_info[c] = False 
+		possitive =	self.cards_info.values().count(True)
+		if possitive == 3:
+			return set(
+				key for key, val in self.cards_info.items()
+				if val == True
+			)
+		elif possitive == 0:
+			return self.snipe_one()
+
+	def got_guess(self, guess):
+		self.guess_got.add(guess)
+
+	def got_answer(self, guess, answer):
+		if answer == False:
+			for c in guess:
+				self.cards_info[c] = False
+		elif answer == None:
+			return
+		else:
+			return						
+
 class InteractivePlayer(Player):
 	def __init__(self, name=None):
 		super(InteractivePlayer, self).__init__(name)
