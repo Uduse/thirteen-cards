@@ -114,40 +114,79 @@ class OkayPlayer(Player):
 		self.guess_made = set()
 		self.guess_got = set()
 		self.cards_info = dict((c, None) for c in all_cards)
+		self.possitive_pairs = set()
+		self.possitive_triads = set()
+		self.last_guess_mode = None
 
 	def get_card(self, card):
 		super(OkayPlayer, self).get_card(card)
 		self.cards_info[card] = False
 
 	def snipe_one(self):
+		self.last_guess_mode = 1
 		return set(list('234'))
 
 	def snipe_two(self):
-		pass
+		self.last_guess_mode = 2
+		not_sure = [c for c, info in self.cards_info if info == None]
+		negative = [c for c, info in self.cards_info if info == False]
+		random.shuffle(not_sure)
+		guess = set( not_sure[0:2] + negative[0:1])
+		return guess
+
+	def snipe_three(self):
+		self.last_guess_mode = 3
+		l = [c for c, info in self.cards_info if info == None]
+		random.shuffle(l)
+		guess = set(l[0:3])
+		return guess
+
+	def update(self, revealed):
+		for c in revealed:
+			self.cards_info[c] = False
+		for p in self.possitive_pairs:
+			if p[0] == False:
+ 				self.cards_info[p[1]] = True
+ 				self.possitive_pairs.remove(p)
+ 			if p[1] == False:
+ 				self.cards_info[p[0]] = True
+ 				self.possitive_pairs.remove(p)
+ 		for t in self.possitive_traids
+ 			if sum(1 for c in t if self.cards_info[c] == False) == 2:
+ 				for c in t:
+ 					if c != False:
+ 						self.cards_info[c] = True
+ 				self.possitive_triads.remove(t)
 
 	def make_guess(self, revealed):
-		for c in revealed:
-			self.cards_info[c] = False 
+		self.update(revealed)
 		possitive =	self.cards_info.values().count(True)
 		if possitive == 3:
 			return set(
 				key for key, val in self.cards_info.items()
 				if val == True
 			)
-		elif possitive == 0:
+		elif possitive == 2:
 			return self.snipe_one()
+		elif possitive == 1:
+			return self.snipe_two()
+		elif possitive == 0:
+			return snipe_three()
 
 	def got_guess(self, guess):
 		self.guess_got.add(guess)
 
-	def got_answer(self, guess, answer):
+	def got_answer(self, guess, answer): 
 		if answer == False:
 			for c in guess:
 				self.cards_info[c] = False
 		elif answer == None:
-			return
-		else:
-			return						
+			if self.last_guess_mode == 3:
+				self.possitive_traid.add(frozenset(guess))
+			elif self.last_guess_mode == 2:
+				self.possitive_pairs.add(frozenset(guess))
+			else:
+				return
 
 class InteractivePlayer(Player):
 	def __init__(self, name=None):
@@ -231,7 +270,8 @@ class Game:
 			if mode == '1':
 				name = raw_input('Your name is:').strip()
 				self.new_player(InteractivePlayer(name))
-				self.new_player(StupidPlayer())
+				# self.new_player(StupidPlayer())
+				self.new_player(OkayPlayer())
 				break
 			elif mode == '2':
 				self.new_player(InteractivePlayer())
