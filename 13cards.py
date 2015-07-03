@@ -77,10 +77,10 @@ class StupidPlayer(Player):
 		self.negative = []
 
 	def make_guess(self, revealed):
-		cards_left = [c for c in all_cards if c not in list(self.hand) + revealed + self.negative]
+		cards_left = [c for c in all_cards if c not in 
+			list(self.hand) + revealed + self.negative]
 		random.shuffle(cards_left)
 		guess = frozenset(cards_left[0:3])
-		# guess = random.choice([p for p in itertools.permutations(cards_left) if p not in self.guess_made])
 		self.guess_made.add(guess)
 		return guess
 
@@ -101,12 +101,15 @@ class InteractivePlayer(Player):
 		self.guess_made = set()
 
 	def make_guess(self, revealed):
-		print 'Your hand: ' + str(list(self.hand)) + '\n'
+		print 'Your hand: ' + str(list(self.hand))
 		guess = set()
 		while len(guess) < 3:
 			s = raw_input('Please enter your guess:')
-			l = [c for c in s if c in all_cards]
+			l = [c for c in s if c in all_cards or c == '1']
+			if "1" in l:
+				l[l.index('1')] = '10'
 			guess = set(l[0:3])
+		print
 		return guess
 
 class Deck:
@@ -116,9 +119,7 @@ class Deck:
 		self.revealed = []
 
 	def __str__(self):
-		s = 'Hidden: ' + str(self.hidden) + '\n'
-		s += 'Revealed: ' + str(self.revealed) + '\n'
-		return s
+		return 'Revealed: ' + str(self.revealed)
 
 	def pop(self):
 		card = random.choice(self.hidden)
@@ -142,6 +143,7 @@ class Game:
 		self.players = []
 		self.mode = None
 		self.winner = None
+		self.round = 0
 
 	def __str__(self):
 		return (
@@ -187,12 +189,16 @@ class Game:
 
 		print "Game starts!!"
 		print "Distributing cards ..."
+		print
 
 	def start(self):
 		self.welcome_dialog()
 		self.initial_cards()
 		self.attacker, self.defender = self.players
-		while True:
+		while not self.deck.empty():
+			print 'Round ' + str(self.round) + '...\n'
+			self.round += 1
+
 			# Player 1 first attacks
 			self.play(self.attacker, self.defender)
 			
@@ -202,7 +208,6 @@ class Game:
 
 			# swap turn
 			self.attacker, self.defender = self.defender, self.attacker
-			print
 
 			# Player 2 first attacks
 			self.play(self.attacker, self.defender)
@@ -213,10 +218,11 @@ class Game:
 		
 			# reveal one card
 			self.deck.reveal()
+			print self.deck
+			print
 
 			# swap turn
 			self.attacker, self.defender = self.defender, self.attacker
-			print 
 
 	def attacker_message(self, guess):
 		print self.attacker.name + ': ' + '"%s"'%', '.join(c for c in guess)
@@ -240,6 +246,7 @@ class Game:
 		# end game if someone wins		
 		if answer:
 			self.winner = self.attacker
+		print
 
 	def check_winner(self):
 		if self.winner:
