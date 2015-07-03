@@ -25,7 +25,7 @@ names =	[
 	"Uduse",
 	"Victor",
 	"Wane",
-	"Xvier",
+	"Xavier",
 	"Yvone",
 	"Zack"
 ]
@@ -33,6 +33,21 @@ names =	[
 def random_name():
 	random.shuffle(names)
 	return names.pop() 
+
+def sort_card(card):
+	if card == 'A':
+		return 1
+	elif card == 'J':
+		return 11
+	elif card == 'Q':
+		return 12
+	elif card == 'K':
+		return 13
+	else:
+		return int(card)
+
+def sorted_cards(cards):
+	return sorted(list(cards), key=sort_card)
 
 all_cards = ['A','2','3','4','5','6','7','8','9','10','J','Q','K']
 say_answer = {True:'Correct', None:'Kinda', False:'Damn wrong'}
@@ -46,7 +61,7 @@ class Player(object):
 			self.name = random_name()
 
 	def __str__(self):
-		return self.name + ": " + str(list(self.hand))
+		return self.name + ": " + str(sorted_cards(self.hand))
 
 	def get_card(self, card):
 		self.hand.add(card)	
@@ -100,8 +115,11 @@ class InteractivePlayer(Player):
 		super(InteractivePlayer, self).__init__(name)
 		self.guess_made = set()
 
+	def display_hand(self):
+		print 'Your hand: ' + str(sorted_cards(self.hand))
+		
 	def make_guess(self, revealed):
-		print 'Your hand: ' + str(list(self.hand))
+		self.display_hand()
 		guess = set()
 		while len(guess) < 3:
 			s = raw_input('Please enter your guess:')
@@ -225,7 +243,10 @@ class Game:
 			self.attacker, self.defender = self.defender, self.attacker
 
 	def attacker_message(self, guess):
-		print self.attacker.name + ': ' + '"%s"'%', '.join(c for c in guess)
+		print (
+			self.attacker.name + ': ' 
+			+ '"%s"'%(', '.join(c for c in sorted_cards(guess)))
+		)
 
 	def defender_message(self, answer):
 		print self.defender.name + ': ' + '"%s"'%say_answer[answer]
