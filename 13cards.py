@@ -87,8 +87,6 @@ class StupidPlayer(Player):
 	def __init__(self, name=None):
 		super(StupidPlayer, self).__init__(name)
 		self.guess_made = set() 
-		self.neutral = [] 
-		self.positive = []
 		self.negative = []
 
 	def make_guess(self, revealed):
@@ -282,6 +280,13 @@ class Game:
 
 			# swap turn
 			self.attacker, self.defender = self.defender, self.attacker
+		if self.deck.empty():
+			self.winner = self.attacker
+		self.game_over()
+
+	def game_over(self):
+		print 'Game Over!'
+		print self.winner.name + ' Won!'
 
 	def attacker_message(self, guess):
 		print (
@@ -294,7 +299,7 @@ class Game:
 
 	def play(self, attacker, defender):
 		# attacker makes guess
-		guess = attacker.make_guess(self.deck.revealed)
+		guess = frozenset(attacker.make_guess(self.deck.revealed))
 		self.defender.got_guess(guess)
 
 		self.attacker_message(guess)
