@@ -34,44 +34,85 @@ def random_name():
 	random.shuffle(names)
 	return names.pop() 
 
-possible_cards = ['A','2','3','4','5','6','7','8','9','10','J','Q','K']
+all_cards = ['A','2','3','4','5','6','7','8','9','10','J','Q','K']
 say_answer = {True:'Correct', None:'Kinda', False:'Damn wrong'}
 
-class Player:
+class Player(object):
 	def __init__(self, name=None):
-		self.cards = []
-		self.guess_made = []
+		self.hand =	set() 
 		if name:
 			self.name = name
 		else:
 			self.name = random_name()
 
 	def __str__(self):
-		return self.name + ": " + str(self.cards)
+		return self.name + ": " + str(list(self.hand))
 
 	def get_card(self, card):
-		self.cards.append(card)	
+		self.hand.add(card)	
 
 	def make_guess(self, revealed):
-		cards_left = [c for c in possible_cards if c not in self.cards + revealed]
-		random.shuffle(cards_left)
-		guess = cards_left[0:3]
-		# guess = random.choice([p for p in itertools.permutations(cards_left) if p not in self.guess_made])
-		self.guess_made.append(guess)
-		return guess
+		pass
 
-	def answer(self, guess):
-		if set(guess) == set(self.cards):
+	def answer_guess(self, guess):
+		if guess == self.hand:
 			return True
-		elif bool(set(guess) & set(self.cards)):
+		elif bool(guess & self.hand):
 			return None
 		else:
 			return False
 
+	def got_guess(self, guess):
+		pass
+
+	def got_answer(self, guess, answer):
+		pass
+
+class StupidPlayer(Player):
+	def __init__(self, name=None):
+		super(StupidPlayer, self).__init__(name)
+		self.guess_made = set() 
+		self.neutral = [] 
+		self.positive = []
+		self.negative = []
+
+	def make_guess(self, revealed):
+		cards_left = [c for c in all_cards if c not in list(self.hand) + revealed + self.negative]
+		random.shuffle(cards_left)
+		guess = frozenset(cards_left[0:3])
+		# guess = random.choice([p for p in itertools.permutations(cards_left) if p not in self.guess_made])
+		self.guess_made.add(guess)
+		return guess
+
+	def got_guess(self, guess):
+		self.negative.extend(guess)		
+
+	def got_answer(self, guess, answer):
+		if answer:
+			return
+		elif answer == False:
+			self.negative.extend(guess)
+		else:
+			pass
+
+class InteractivePlayer(Player):
+	def __init__(self, name=None):
+		super(InteractivePlayer, self).__init__(name)
+		self.guess_made = set()
+
+	def make_guess(self, revealed):
+		print 'Your hand: ' + str(list(self.hand)) + '\n'
+		guess = set()
+		while len(guess) < 3:
+			s = raw_input('Please enter your guess:')
+			l = [c for c in s if c in all_cards]
+			guess = set(l[0:3])
+		return guess
+
 class Deck:
 	def __init__(self):
-		random.shuffle(possible_cards)	
-		self.hidden = list(possible_cards)
+		random.shuffle(all_cards)	
+		self.hidden = list(all_cards)
 		self.revealed = []
 
 	def __str__(self):
@@ -92,11 +133,16 @@ class Deck:
 	def empty(self):
 		return len(self.hidden) == 0
 
+	def cards_left(self):
+		return len(self.hidden)
+
 class Game:
-	def __init__(self, players):
+	def __init__(self):
 		self.deck = Deck()
-		self.players = players
-		
+		self.players = []
+		self.mode = None
+		self.winner = None
+
 	def __str__(self):
 		return (
 			'===========================================\n'
@@ -106,41 +152,100 @@ class Game:
 			+ '\n'.join("%s" %str(p) for p in self.players) + '\n'
 		)
 
-	def new_player(self, player, name=None):
-		self.append(Player(name=name))
+	def new_player(self, player):
+		self.players.append(player)
 
 	def initial_cards(self):
 		for i in range(3):
 			for p in self.players:
 				p.get_card(self.deck.pop())
 
-	def start(self):
+	def welcome_dialog(self):
+		print "Welcome!"
+		while True:
+			mode = raw_input(
+				'Please enter game mode:\n'
+				'1. Single Player\n'
+				'2. Two Players\n'
+				'3. Watch Sample Battle\n'
+			)
+			if mode == '1':
+				name = raw_input('Your name is:').strip()
+				self.new_player(InteractivePlayer(name))
+				self.new_player(StupidPlayer())
+				break
+			elif mode == '2':
+				self.new_player(InteractivePlayer())
+				self.new_player(InteractivePlayer())
+				break
+			elif mode == '3':
+				self.new_player(StupidPlayer())
+				self.new_player(StupidPlayer())
+				break
+			else:
+				print 'Please enter a valid mode'
+
 		print "Game starts!!"
 		print "Distributing cards ..."
-		self.initial_cards()
-		attacker, defender = self.players
-		while True:
-			print self
-			# attacker makes guess
-			guess = attacker.make_guess(self.deck.revealed)
-			print attacker.name + ': ' + '"%s"'%', '.join(c for c in guess)
 
-			# defender answers
-			answer = defender.answer(guess)
-			print defender.name + ': ' + '"%s"'%say_answer[answer]
-			if answer:
+	def start(self):
+		self.welcome_dialog()
+		self.initial_cards()
+		self.attacker, self.defender = self.players
+		while True:
+			# Player 1 first attacks
+			self.play(self.attacker, self.defender)
+			
+			# Stop if player 1 got it right
+			if self.check_winner():
 				break
 
-			# attacker updates
+			# swap turn
+			self.attacker, self.defender = self.defender, self.attacker
+			print
 
-			# defender updates
-
+			# Player 2 first attacks
+			self.play(self.attacker, self.defender)
+			
+			# Stop if player 2 got it right
+			if self.check_winner():
+				break
+		
 			# reveal one card
 			self.deck.reveal()
 
 			# swap turn
-			attacker, defender = defender, attacker
+			self.attacker, self.defender = self.defender, self.attacker
+			print 
 
-players = [Player(), Player()]		
-game = Game(players)
+	def attacker_message(self, guess):
+		print self.attacker.name + ': ' + '"%s"'%', '.join(c for c in guess)
+
+	def defender_message(self, answer):
+		print self.defender.name + ': ' + '"%s"'%say_answer[answer]
+
+	def play(self, attacker, defender):
+		# attacker makes guess
+		guess = attacker.make_guess(self.deck.revealed)
+		self.defender.got_guess(guess)
+
+		self.attacker_message(guess)
+
+		# defender answers
+		answer = self.defender.answer_guess(guess)
+		self.attacker.got_answer(guess, answer)
+
+		self.defender_message(answer)
+
+		# end game if someone wins		
+		if answer:
+			self.winner = self.attacker
+
+	def check_winner(self):
+		if self.winner:
+			return True
+		else:
+			return False
+
+game = Game()
 game.start()
