@@ -114,8 +114,8 @@ class OkayPlayer(Player):
 		self.guess_made = set()
 		self.guess_got = set()
 		self.cards_info = dict((c, None) for c in all_cards)
-		self.possitive_pairs = set()
-		self.possitive_triads = set()
+		self.possitive_pairs = list()
+		self.possitive_triads = list()
 		self.last_guess_mode = None
 
 	def get_card(self, card):
@@ -128,15 +128,19 @@ class OkayPlayer(Player):
 
 	def snipe_two(self):
 		self.last_guess_mode = 2
-		not_sure = [c for c, info in self.cards_info if info == None]
-		negative = [c for c, info in self.cards_info if info == False]
+		not_sure = [c for c in self.cards_info if self.cards_info[c] == None]
+		negative = [c for c in self.cards_info if self.cards_info[c] == False]
 		random.shuffle(not_sure)
+		random.shuffle(negative)
 		guess = set( not_sure[0:2] + negative[0:1])
 		return guess
 
 	def snipe_three(self):
 		self.last_guess_mode = 3
-		l = [c for c, info in self.cards_info if info == None]
+		info = sorted(list(self.cards_info.items()), key=lambda x: sort_card(x[0]))
+		print info
+		# print '\n'.join()
+		l = [c for c in self.cards_info if self.cards_info[c] == None]
 		random.shuffle(l)
 		guess = set(l[0:3])
 		return guess
@@ -151,7 +155,7 @@ class OkayPlayer(Player):
  			if p[1] == False:
  				self.cards_info[p[0]] = True
  				self.possitive_pairs.remove(p)
- 		for t in self.possitive_traids
+ 		for t in self.possitive_triads:
  			if sum(1 for c in t if self.cards_info[c] == False) == 2:
  				for c in t:
  					if c != False:
@@ -168,23 +172,24 @@ class OkayPlayer(Player):
 			)
 		elif possitive == 2:
 			return self.snipe_one()
-		elif possitive == 1:
+		else:
 			return self.snipe_two()
-		elif possitive == 0:
-			return snipe_three()
+		# elif possitive == 0:
+		# 	return self.snipe_three()
 
 	def got_guess(self, guess):
 		self.guess_got.add(guess)
 
-	def got_answer(self, guess, answer): 
+	def got_answer(self, guess, answer):
 		if answer == False:
 			for c in guess:
 				self.cards_info[c] = False
 		elif answer == None:
 			if self.last_guess_mode == 3:
-				self.possitive_traid.add(frozenset(guess))
+				self.possitive_triads.append(list(guess))
 			elif self.last_guess_mode == 2:
-				self.possitive_pairs.add(frozenset(guess))
+			# FIXME: should append a pair not a triad	
+				self.possitive_pairs.append(list(guess))
 			else:
 				return
 
