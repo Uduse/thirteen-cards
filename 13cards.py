@@ -2,6 +2,7 @@
 # TODO: Repetitive games
 # TODO: OkayPlayer
 # TODO: Save/Load game
+# TODO: Guess size must be three
 import itertools
 import random
 
@@ -130,6 +131,8 @@ class OkayPlayer(Player):
         self.positive_pairs = list()
         self.positive_triads = list()
         self.last_guess_mode = None
+        self.last_pair = None
+        self.last_triad = None
 
     def get_card(self, card):
         super(OkayPlayer, self).get_card(card)
@@ -141,11 +144,19 @@ class OkayPlayer(Player):
 
     def snipe_two(self):
         self.last_guess_mode = 2
-        not_sure = [c for c in self.cards_info if self.cards_info[c] == None]
+        not_sure = [c for c in self.cards_info if self.cards_info[c] is None]
         negative = [c for c in self.cards_info if self.cards_info[c] == False]
         random.shuffle(not_sure)
         random.shuffle(negative)
-        guess = set(not_sure[0:2] + negative[0:1])
+        not_sure_rearranged = []
+        paired_cards = [c for p in self.positive_pairs for c in p]
+        for c in not_sure:
+            if c in paired_cards:
+                not_sure_rearranged.append(c)
+            else:
+                not_sure_rearranged.insert(0, c)
+        self.last_pair = not_sure_rearranged[0:2]
+        guess = set( self.last_pair + negative[0:1])
         return guess
 
     def snipe_three(self):
@@ -156,37 +167,41 @@ class OkayPlayer(Player):
         l = [c for c in self.cards_info if self.cards_info[c] == None]
         random.shuffle(l)
         guess = set(l[0:3])
+        self.last_triad = guess
         return guess
 
     def update(self, revealed):
         for c in revealed:
             self.cards_info[c] = False
         for p in self.positive_pairs:
-            if p[0] == False:
+            if self.cards_info[p[0]] == False:
                 self.cards_info[p[1]] = True
-                self.positive_pairs.remove(p)
-            if p[1] == False:
+                # self.positive_pairs.remove(p)
+            if self.cards_info[p[1]] == False:
                 self.cards_info[p[0]] = True
-                self.positive_pairs.remove(p)
+                # self.positive_pairs.remove(p)
         for t in self.positive_triads:
             if sum(1 for c in t if self.cards_info[c] == False) == 2:
                 for c in t:
                     if c != False:
                         self.cards_info[c] = True
-                self.positive_triads.remove(t)
+                # self.positive_triads.remove(t)
 
     def make_guess(self, revealed):
         self.update(revealed)
         positive = self.cards_info.values().count(True)
-        if positive == 3:
+        not_sure = self.cards_info.values().count(None)
+        if positive + not_sure == 3:
             return set(
                 key for key, val in self.cards_info.items()
-                if val == True
+                if val == True or val is None
             )
-        elif positive == 2:
-            return self.snipe_one()
+        elif positive > 2:
+            self.last_guess = self.snipe_one()
+            return self.last_guess
         else:
-            return self.snipe_two()
+            self.last_guess = self.snipe_two()
+            return self.last_guess
         # elif positive == 0:
         # 	return self.snipe_three()
 
@@ -199,10 +214,10 @@ class OkayPlayer(Player):
                 self.cards_info[c] = False
         elif answer == None:
             if self.last_guess_mode == 3:
-                self.positive_triads.append(list(self.last_guess))
+                self.positive_triads.append(list(self.last_triad))
             elif self.last_guess_mode == 2:
                 # FIXME: should append a pair not a triad
-                self.positive_pairs.append(list(self.last_guess))
+                self.positive_pairs.append(list(self.last_pair))
             else:
                 return
 
@@ -300,7 +315,7 @@ class Game:
                 self.new_player(InteractivePlayer())
                 break
             elif mode == '3':
-                self.new_player(StupidPlayer())
+                self.new_player(OkayPlayer())
                 self.new_player(StupidPlayer())
                 break
             else:
@@ -319,7 +334,7 @@ class Game:
             self.round += 1
 
             # Player 1 first attacks
-            self.play(self.attacker, self.defender)
+            self.play()
 
             # Stop if player 1 got it right
             if self.check_winner():
@@ -329,7 +344,7 @@ class Game:
             self.attacker, self.defender = self.defender, self.attacker
 
             # Player 2 first attacks
-            self.play(self.attacker, self.defender)
+            self.play()
 
             # Stop if player 2 got it right
             if self.check_winner():
@@ -359,18 +374,16 @@ class Game:
     def defender_message(self, answer):
         print self.defender.name + ': ' + '"%s"' % say_answer[answer]
 
-    def play(self, attacker, defender):
+    def play(self):
         # attacker makes guess
-        guess = frozenset(attacker.make_guess(self.deck.revealed))
-        self.defender.got_guess(guess)
-
+        guess = frozenset(self.attacker.make_guess(self.deck.revealed))
         self.attacker_message(guess)
+        self.defender.got_guess(guess)
 
         # defender answers
         answer = self.defender.answer_guess(guess)
-        self.attacker.got_answer(answer)
-
         self.defender_message(answer)
+        self.attacker.got_answer(answer)
 
         # end game if someone wins
         if answer:
@@ -382,7 +395,6 @@ class Game:
             return True
         else:
             return False
-
 
 game = Game()
 game.start()
