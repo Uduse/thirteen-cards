@@ -131,6 +131,7 @@ class OkayPlayer(Player):
         self.positive_pairs = list()
         self.positive_triads = list()
         self.last_guess_mode = None
+        self.last_one = None
         self.last_pair = None
         self.last_triad = None
 
@@ -140,23 +141,25 @@ class OkayPlayer(Player):
 
     def snipe_one(self):
         self.last_guess_mode = 1
-        return set(list('234'))
+        negative = [c for c in self.cards_info if self.cards_info[c] == False]
+        not_sure = random.choice([c for c in self.cards_info if self.cards_info[c] is None])
+        random.shuffle(negative)
+        negative_pair = negative[0:2]
+        guess = negative_pair + [not_sure]
+        self.last_guess = guess
+        self.last_one = not_sure
+        return guess
 
     def snipe_two(self):
         self.last_guess_mode = 2
         not_sure = [c for c in self.cards_info if self.cards_info[c] is None]
-        negative = [c for c in self.cards_info if self.cards_info[c] == False]
-        random.shuffle(not_sure)
-        random.shuffle(negative)
-        not_sure_rearranged = []
+        negative = random.choice([c for c in self.cards_info if self.cards_info[c] == False])
         paired_cards = [c for p in self.positive_pairs for c in p]
-        for c in not_sure:
-            if c in paired_cards:
-                not_sure_rearranged.append(c)
-            else:
-                not_sure_rearranged.insert(0, c)
-        self.last_pair = not_sure_rearranged[0:2]
-        guess = set( self.last_pair + negative[0:1])
+        candidates = list(set(not_sure) - set(paired_cards))
+        if len(candidates) < 2:
+            return
+        self.last_pair = candidates[0:2]
+        guess = set(self.last_pair + [negative])
         return guess
 
     def snipe_three(self):
@@ -164,11 +167,22 @@ class OkayPlayer(Player):
         info = sorted(list(self.cards_info.items()), key=lambda x: sort_card(x[0]))
         print info
         # print '\n'.join()
-        l = [c for c in self.cards_info if self.cards_info[c] == None]
+        l = [c for c in self.cards_info if self.cards_info[c] is None]
         random.shuffle(l)
         guess = set(l[0:3])
         self.last_triad = guess
         return guess
+
+    def snipe(self):
+        guess = self.snipe_two()
+        if guess:
+            self.last_guess = guess
+            return guess
+        else:
+            guess = self.snipe_one()
+            self.last_guess = guess
+            return guess
+
 
     def update(self, revealed):
         for c in revealed:
@@ -196,12 +210,14 @@ class OkayPlayer(Player):
                 key for key, val in self.cards_info.items()
                 if val == True or val is None
             )
-        elif positive > 2:
-            self.last_guess = self.snipe_one()
-            return self.last_guess
         else:
-            self.last_guess = self.snipe_two()
-            return self.last_guess
+            return self.snipe()
+        # elif positive > 2:
+        #     self.last_guess = self.snipe_one()
+        #     return self.last_guess
+        # else:
+        #     self.last_guess = self.snipe_two()
+        #     return self.last_guess
         # elif positive == 0:
         # 	return self.snipe_three()
 
@@ -216,11 +232,10 @@ class OkayPlayer(Player):
             if self.last_guess_mode == 3:
                 self.positive_triads.append(list(self.last_triad))
             elif self.last_guess_mode == 2:
-                # FIXME: should append a pair not a triad
                 self.positive_pairs.append(list(self.last_pair))
             else:
-                return
-
+                # Snipe One
+                self.cards_info[self.last_one] = True
 
 class InteractivePlayer(Player):
     def __init__(self, name=None):
