@@ -322,7 +322,6 @@ class Game:
             if mode == '1':
                 name = raw_input('Your name is:').strip()
                 self.new_player(InteractivePlayer(name))
-                # self.new_player(StupidPlayer())
                 self.new_player(OkayPlayer())
                 break
             elif mode == '2':
@@ -331,7 +330,8 @@ class Game:
                 break
             elif mode == '3':
                 self.new_player(OkayPlayer())
-                self.new_player(StupidPlayer())
+                self.new_player(OkayPlayer())
+                # self.new_player(StupidPlayer())
                 break
             else:
                 print 'Please enter a valid mode'
@@ -391,7 +391,7 @@ class Game:
 
     def play(self):
         # attacker makes guess
-        guess = frozenset(self.attacker.make_guess(self.deck.revealed))
+        guess = self.get_guess()
         self.attacker_message(guess)
         self.defender.got_guess(guess)
 
@@ -404,6 +404,12 @@ class Game:
         if answer:
             self.winner = self.attacker
         print
+
+    def get_guess(self):
+        guess = frozenset(self.attacker.make_guess(self.deck.revealed))
+        if len(guess) != 3:
+            raise ValueError("Invalid guess!")
+        return guess
 
     def check_winner(self):
         if self.winner:
