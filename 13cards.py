@@ -366,12 +366,14 @@ class Game:
                 break
 
             # reveal one card
-            self.deck.reveal()
-            print self.deck
-            print
+            if self.round >= 2:
+                self.deck.reveal()
+                print self.deck
+                print
 
             # swap turn
             self.attacker, self.defender = self.defender, self.attacker
+
         if self.deck.empty():
             self.winner = self.attacker
         self.game_over()
