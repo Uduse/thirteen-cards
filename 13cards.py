@@ -1,8 +1,7 @@
 # TODO: Select difficulty
 # TODO: Repetitive games
-# TODO: OkayPlayer
 # TODO: Save/Load game
-# TODO: Guess size must be three
+# TODO: BetterPlayer with ability to guess triad forehand
 import itertools
 import random
 
@@ -134,6 +133,7 @@ class OkayPlayer(Player):
         self.last_one = None
         self.last_pair = None
         self.last_triad = None
+        self.sure_candidates = []
 
     def get_card(self, card):
         super(OkayPlayer, self).get_card(card)
@@ -202,22 +202,29 @@ class OkayPlayer(Player):
 
     def make_guess(self, revealed):
         self.update(revealed)
-        positive = self.cards_info.values().count(True)
-        not_sure = self.cards_info.values().count(None)
-        if positive + not_sure == 3:
+        if self.sure_candidates:
+            return self.sure_candidates.pop()
+        positive_cards = [c for c in self.cards_info if self.cards_info[c] is True]
+        not_sure_cards = [c for c in self.cards_info if self.cards_info[c] is None]
+        if len(positive_cards) + len(not_sure_cards) == 3:
             return set(
                 key for key, val in self.cards_info.items()
-                if val == True or val is None
+                if val is True or val is None
             )
+        elif len(positive_cards) == 2 and len(not_sure_cards) == 2:
+            random.shuffle(not_sure_cards)
+            self.sure_candidates.append(positive_cards + [not_sure_cards[0]])
+            self.sure_candidates.append(positive_cards + [not_sure_cards[1]])
+            return self.sure_candidates.pop()
         else:
             return self.snipe()
-        # elif positive > 2:
+        # elif num_positive > 2:
         #     self.last_guess = self.snipe_one()
         #     return self.last_guess
         # else:
         #     self.last_guess = self.snipe_two()
         #     return self.last_guess
-        # elif positive == 0:
+        # elif num_positive == 0:
         # 	return self.snipe_three()
 
     def got_guess(self, guess):
