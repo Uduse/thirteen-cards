@@ -183,7 +183,6 @@ class OkayPlayer(Player):
             self.last_guess = guess
             return guess
 
-
     def update(self, revealed):
         for c in revealed:
             self.cards_info[c] = False
@@ -249,8 +248,9 @@ class InteractivePlayer(Player):
         self.display_hand()
         guess = set()
         while len(guess) < 3:
-            s = raw_input('Please enter your guess ( \'?\' - print help )')
+            s = raw_input('Please enter your guess ( \'?\' - print help )\n')
             if s == '?':
+                print
                 print 'Enter three consecutive alphanumerical characters to make a guess'
                 print
                 print 'Digits 2-9 represent card 2-9, respectively.'
