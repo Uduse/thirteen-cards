@@ -265,7 +265,7 @@ class InteractivePlayer(Player):
                 print 'e.g. "5IJ" guesses card 5, 10 and J'
                 print
                 continue
-            l = [c for c in s if c in all_cards or c == '1']
+            l = [c for c in s if c in all_cards or c == '1' or c == '0' or c == 'I']
             if "1" in l:
                 l[l.index('1')] = 'A'
             if "0" in l:
