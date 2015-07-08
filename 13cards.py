@@ -249,10 +249,29 @@ class InteractivePlayer(Player):
         self.display_hand()
         guess = set()
         while len(guess) < 3:
-            s = raw_input('Please enter your guess:')
+            s = raw_input('Please enter your guess ( \'?\' - print help )')
+            if s == '?':
+                print 'Enter three consecutive alphanumerical characters to make a guess'
+                print
+                print 'Digits 2-9 represent card 2-9, respectively.'
+                print 'Letter J, Q, K represent card J, Q, K, respectively.'
+                print 'e.g. "357" guesses card 3, 5 and 7'
+                print 'e.g. "79K" guesses card 7, 9 and K'
+                print
+                print '"1" and "A" represent card "A"'
+                print 'e.g. "123" guesses card A, 2, and 3'
+                print
+                print '"0" or "I" represent card "10"'
+                print 'e.g. "5IJ" guesses card 5, 10 and J'
+                print
+                continue
             l = [c for c in s if c in all_cards or c == '1']
             if "1" in l:
-                l[l.index('1')] = '10'
+                l[l.index('1')] = 'A'
+            if "0" in l:
+                l[l.index('0')] = '10'
+            if "I" in l:
+                l[l.index('I')] = '10'
             guess = set(l[0:3])
         print
         self.last_guess = guess
