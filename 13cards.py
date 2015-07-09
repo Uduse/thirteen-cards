@@ -115,7 +115,7 @@ class StupidPlayer(Player):
     def got_answer(self, answer):
         if answer:
             return
-        elif answer == False:
+        elif answer is False:
             self.negative.extend(self.last_guess)
         else:
             pass
@@ -141,7 +141,7 @@ class OkayPlayer(Player):
 
     def snipe_one(self):
         self.last_guess_mode = 1
-        negative = [c for c in self.cards_info if self.cards_info[c] == False]
+        negative = [c for c in self.cards_info if self.cards_info[c] is False]
         not_sure = random.choice([c for c in self.cards_info if self.cards_info[c] is None])
         random.shuffle(negative)
         negative_pair = negative[0:2]
@@ -153,7 +153,7 @@ class OkayPlayer(Player):
     def snipe_two(self):
         self.last_guess_mode = 2
         not_sure = [c for c in self.cards_info if self.cards_info[c] is None]
-        negative = random.choice([c for c in self.cards_info if self.cards_info[c] == False])
+        negative = random.choice([c for c in self.cards_info if self.cards_info[c] is False])
         paired_cards = [c for p in self.positive_pairs for c in p]
         candidates = list(set(not_sure) - set(paired_cards))
         if len(candidates) < 2:
@@ -187,16 +187,16 @@ class OkayPlayer(Player):
         for c in revealed:
             self.cards_info[c] = False
         for p in self.positive_pairs:
-            if self.cards_info[p[0]] == False:
+            if self.cards_info[p[0]] is False:
                 self.cards_info[p[1]] = True
                 # self.positive_pairs.remove(p)
-            if self.cards_info[p[1]] == False:
+            if self.cards_info[p[1]] is False:
                 self.cards_info[p[0]] = True
                 # self.positive_pairs.remove(p)
         for t in self.positive_triads:
-            if sum(1 for c in t if self.cards_info[c] == False) == 2:
+            if sum(1 for c in t if self.cards_info[c] is False) == 2:
                 for c in t:
-                    if c != False:
+                    if c is not False:
                         self.cards_info[c] = True
                 # self.positive_triads.remove(t)
 
@@ -218,23 +218,15 @@ class OkayPlayer(Player):
             return self.sure_candidates.pop()
         else:
             return self.snipe()
-        # elif num_positive > 2:
-        #     self.last_guess = self.snipe_one()
-        #     return self.last_guess
-        # else:
-        #     self.last_guess = self.snipe_two()
-        #     return self.last_guess
-        # elif num_positive == 0:
-        # 	return self.snipe_three()
 
     def got_guess(self, guess):
         self.guess_got.add(guess)
 
     def got_answer(self, answer):
-        if answer == False:
+        if answer is False:
             for c in self.last_guess:
                 self.cards_info[c] = False
-        elif answer == None:
+        elif answer is None:
             if self.last_guess_mode == 3:
                 self.positive_triads.append(list(self.last_triad))
             elif self.last_guess_mode == 2:
@@ -284,7 +276,6 @@ class InteractivePlayer(Player):
         self.last_guess = guess
         return guess
 
-
 class Deck:
     def __init__(self):
         random.shuffle(all_cards)
@@ -309,7 +300,6 @@ class Deck:
 
     def cards_left(self):
         return len(self.hidden)
-
 
 class Game:
     def __init__(self):
