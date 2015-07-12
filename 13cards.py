@@ -2,7 +2,7 @@
 # TODO: Repetitive games
 # TODO: Save/Load game
 # TODO: BetterPlayer with ability to guess triad forehand
-import itertools
+
 import random
 
 names = [
@@ -235,6 +235,7 @@ class OkayPlayer(Player):
                 # Snipe One
                 self.cards_info[self.last_one] = True
 
+
 class InteractivePlayer(Player):
     def __init__(self, name=None):
         super(InteractivePlayer, self).__init__(name)
@@ -276,6 +277,7 @@ class InteractivePlayer(Player):
         self.last_guess = guess
         return guess
 
+
 class Deck:
     def __init__(self):
         random.shuffle(all_cards)
@@ -301,6 +303,7 @@ class Deck:
     def cards_left(self):
         return len(self.hidden)
 
+
 class Game:
     def __init__(self):
         self.deck = Deck()
@@ -308,6 +311,8 @@ class Game:
         self.mode = None
         self.winner = None
         self.round = 0
+        self.attacker = None
+        self.defender = None
 
     def __str__(self):
         return (
@@ -434,6 +439,7 @@ class Game:
             return True
         else:
             return False
+
 
 game = Game()
 game.start()
